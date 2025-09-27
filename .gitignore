@@ -10,6 +10,7 @@ backend/bin/
 *.out
 *.log
 *.env
+backend/key/*.json
 
 # GCP/Firebase keys
 *.json
