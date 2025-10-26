@@ -1,16 +1,16 @@
-name: Deploy Backend to Cloud Run
+name: Deploy to Cloud Run
 
 on:
   push:
     branches:
-      - main  # ← mainブランチにpushしたらデプロイ
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Cloud SDK
@@ -19,7 +19,7 @@ jobs:
           project_id: yarn-app-b0cb9
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
-          
+
       - name: Verify gcloud auth
         run: gcloud auth list
 
@@ -30,5 +30,4 @@ jobs:
             --source . \
             --region asia-northeast1 \
             --allow-unauthenticated \
-            --set-env-vars GCP_PROJECT_ID=yarn-app-b0cb9 \
-            --quiet
+            --set-env-vars GCP_PROJECT_ID=yarn-app-b0cb9
