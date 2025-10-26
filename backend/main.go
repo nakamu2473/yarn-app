@@ -93,9 +93,57 @@ func main() {
 	initFirestore()
 	defer client.Close()
 
-	http.HandleFunc("/yarns", yarnsHandler)
+	// http.HandleFunc("/yarns", yarnsHandler)
 	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/yarns", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			yarnsHandler(w, r)
+		case http.MethodPost:
+			createYarnHandler(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
-	log.Println("Listening on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // fallback
+	}
+	log.Printf("Listening on port %s", port)
+	if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
+
+func createYarnHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var newYarn Yarn
+	if err := json.NewDecoder(r.Body).Decode(&newYarn); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, os.Getenv("GCP_PROJECT_ID"))
+	if err != nil {
+		http.Error(w, "Failed to connect Firestore", http.StatusInternalServerError)
+		return
+	}
+	defer client.Close()
+
+	docRef, _, err := client.Collection("yarns").Add(ctx, newYarn)
+	if err != nil {
+		http.Error(w, "Failed to save yarn", http.StatusInternalServerError)
+		return
+	}
+
+	newYarn.ID = docRef.ID
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(newYarn)
+}
+
