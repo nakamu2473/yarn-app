@@ -8,21 +8,32 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 🔐 GCP 認証
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # ☁️ Cloud SDK セットアップ
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: yarn-app-b0cb9
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
 
+      # 🧾 認証確認（ちゃんと通ってるかチェック）
       - name: Verify gcloud auth
         run: gcloud auth list
 
+      # 🚀 Cloud Run にデプロイ
       - name: Deploy to Cloud Run
         run: |
           cd backend
