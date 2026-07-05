@@ -15,3 +15,9 @@ backend/key/*.json
 # GCP/Firebase keys
 *.json
 *.env
+
+# JSON のうち秘密情報を含まない設定ファイルは追跡する
+!package.json
+!package-lock.json
+!tsconfig*.json
+!firebase.json
